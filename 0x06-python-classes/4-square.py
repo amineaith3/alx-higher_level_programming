@@ -17,7 +17,7 @@ class Square:
         """Set the current size of the square"""
         return (self.__size)
 
-    @size_setter
+    @size.setter
     def size(self, value):
         if not isinstance(value, int):
             raise TypeError("size must be an integer")
