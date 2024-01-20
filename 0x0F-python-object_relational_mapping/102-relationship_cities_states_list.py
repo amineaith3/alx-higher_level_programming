@@ -1,28 +1,33 @@
 #!/usr/bin/python3
-"""script to create city and state object"""
+"""Script to list all State and corresponding City objects in the database"""
 
 if __name__ == "__main__":
-    from sqlalchemy.engine import create_engine
-    from sqlalchemy.engine.url import URL
+    from sqlalchemy import create_engine
     from sqlalchemy.orm import Session
+    from sqlalchemy.orm import aliased
     from relationship_city import City
     from relationship_state import Base, State
     from sys import argv
 
-    db = {'drivername': 'mysql+mysqldb',
-          'host': 'localhost',
-          'port': '3306',
-          'username': argv[1],
-          'password': argv[2],
-          'database': argv[3]}
+    db = {
+        'drivername': 'mysql+mysqldb',
+        'host': 'localhost',
+        'port': '3306',
+        'username': argv[1],
+        'password': argv[2],
+        'database': argv[3]
+    }
 
-    url = URL(**db)
-    engine = create_engine(url, pool_pre_ping=True)
+    engine = create_engine(f"mysql+mysqldb://{argv[1]}:{argv[2]}@localhost:3306/{argv[3]}", pool_pre_ping=True)
     Base.metadata.create_all(engine)
 
     session = Session(engine)
-    for city, state in session.query(City, State)\
-                              .filter(City.state_id == State.id):
-        print("{}: {} -> {}".format(city.id, city.name, state.name))
+
+    # Using aliased to differentiate between City and State instances in the query
+    state_alias = aliased(State)
+    for city, state in session.query(City, state_alias)\
+                             .join(state_alias, City.state)\
+                             .order_by(state_alias.id, City.id):
+        print("{}: {} -> {}".format(state.id, state.name, city.name))
 
     session.close()
